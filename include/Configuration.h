@@ -242,7 +242,7 @@ struct BATTERY_CONFIG_T {
 };
 using BatteryConfig = struct BATTERY_CONFIG_T;
 
-enum GridChargerProviderType { HUAWEI = 0 };
+enum GridChargerProviderType { HUAWEI = 0, HTTP =1 };
 enum GridChargerHardwareInterface { MCP2515 = 0, TWAI = 1 };
 
 struct GRID_CHARGER_CAN_CONFIG_T {
@@ -260,6 +260,21 @@ struct GRID_CHARGER_HUAWEI_CONFIG_T {
 };
 using GridChargerHuaweiConfig = struct GRID_CHARGER_HUAWEI_CONFIG_T;
 
+
+struct GRID_CHARGER_HTTP_CONFIG_T{
+    char url[1025];
+    char uri_on[1025];
+    char uri_off[1025];
+    char uri_stats[1025];
+    char uri_powerparam[256];
+    float POWER_ON_threshold;
+    float POWER_OFF_threshold;
+    float start_batterysoc_threshold;
+    float stop_batterysoc_threshold;
+    bool BatterySoCLimitsEnabled;
+};
+using GridChargerHTTPConfig = struct GRID_CHARGER_HTTP_CONFIG_T;
+
 struct GRID_CHARGER_CONFIG_T {
     bool Enabled;
     bool AutoPowerEnabled;
@@ -274,8 +289,10 @@ struct GRID_CHARGER_CONFIG_T {
     GridChargerProviderType Provider;
     GridChargerCanConfig Can;
     GridChargerHuaweiConfig Huawei;
+    GridChargerHTTPConfig HTTP;
 };
 using GridChargerConfig = struct GRID_CHARGER_CONFIG_T;
+
 
 enum SolarChargerProviderType { VEDIRECT = 0, MQTT = 1 };
 
@@ -489,6 +506,7 @@ public:
     static void serializeGridChargerConfig(GridChargerConfig const& source, JsonObject& target);
     static void serializeGridChargerCanConfig(GridChargerCanConfig const& source, JsonObject& target);
     static void serializeGridChargerHuaweiConfig(GridChargerHuaweiConfig const& source, JsonObject& target);
+    static void serializeGridChargerHTTPConfig(GridChargerHTTPConfig const& source, JsonObject& target);
 
     static void deserializeHttpRequestConfig(JsonObject const& source_http_config, HttpRequestConfig& target);
     static void deserializeSolarChargerConfig(JsonObject const& source, SolarChargerConfig& target);
@@ -506,6 +524,7 @@ public:
     static void deserializeGridChargerConfig(JsonObject const& source, GridChargerConfig& target);
     static void deserializeGridChargerCanConfig(JsonObject const& source, GridChargerCanConfig& target);
     static void deserializeGridChargerHuaweiConfig(JsonObject const& source, GridChargerHuaweiConfig& target);
+    static void deserializeGridChargerHTTPConfig(JsonObject const& source, GridChargerHTTPConfig& target);
 private:
     void loop();
     static double roundedFloat(float val);

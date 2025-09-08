@@ -257,6 +257,20 @@ void ConfigurationClass::serializeGridChargerHuaweiConfig(GridChargerHuaweiConfi
     target["fan_offline_full_speed"] = source.FanOfflineFullSpeed;
 }
 
+void ConfigurationClass::serializeGridChargerHTTPConfig(GridChargerHTTPConfig const& source, JsonObject& target)
+{
+    target["stop_batterysoc_threshold"] = source.stop_batterysoc_threshold;
+    target["start_batterysoc_threshold"] = source.start_batterysoc_threshold;
+    target["url"] = source.url;
+    target["uri_on"] = source.uri_on;
+    target["uri_off"] = source.uri_off;
+    target["uri_stats"] = source.uri_stats;
+    target["uri_powerparam"] = source.uri_powerparam;
+    target["power_on_threshold"] = source.POWER_ON_threshold;
+    target["power_off_threshold"] = source.POWER_OFF_threshold;
+    target["power_batterysoc_limits_enabled"] = source.BatterySoCLimitsEnabled;
+}
+
 bool ConfigurationClass::write()
 {
     File f = LittleFS.open(CONFIG_FILENAME, "w");
@@ -444,6 +458,11 @@ bool ConfigurationClass::write()
 
     JsonObject gridcharger_huawei = gridcharger["huawei"].to<JsonObject>();
     serializeGridChargerHuaweiConfig(config.GridCharger.Huawei, gridcharger_huawei);
+
+    JsonObject gridcharger_HTTP = gridcharger["HTTP"].to<JsonObject>();
+    serializeGridChargerHTTPConfig(config.GridCharger.HTTP, gridcharger_HTTP);
+
+
 
     if (!Utils::checkJsonAlloc(doc, __FUNCTION__, __LINE__)) {
         return false;
@@ -674,6 +693,21 @@ void ConfigurationClass::deserializeGridChargerHuaweiConfig(JsonObject const& so
     target.FanOfflineFullSpeed = source["fan_offline_full_speed"] | GRIDCHARGER_HUAWEI_FAN_OFFLINE_FULL_SPEED;
 }
 
+
+void ConfigurationClass::deserializeGridChargerHTTPConfig(JsonObject const& source, GridChargerHTTPConfig& target)
+{
+    target.stop_batterysoc_threshold = source["stop_batterysoc_threshold"] | GRIDCHARGER_HTTP_STOP_BATTERYSOC_THRESHOLD;
+    target.start_batterysoc_threshold = source["start_batterysoc_threshold"] | GRIDCHARGER_HTTP_START_BATTERYSOC_THRESHOLD;
+    strlcpy(target.url, source["url"] | GRIDCHARGER_HTTP_IPADDRESS, sizeof(target.url));
+    strlcpy(target.uri_on, source["uri_on"] | GRIDCHARGER_HTTP_URION, sizeof(target.uri_on));
+    strlcpy(target.uri_off, source["uri_off"] | GRIDCHARGER_HTTP_URIOFF, sizeof(target.uri_off));
+    strlcpy(target.uri_stats, source["uri_stats"] | GRIDCHARGER_HTTP_URISTATS, sizeof(target.uri_stats));
+    strlcpy(target.uri_powerparam, source["uri_powerparam"] | GRIDCHARGER_HTTP_URIPOWERPARAM, sizeof(target.uri_powerparam));
+    target.POWER_ON_threshold = source["power_on_threshold"] | GRIDCHARGER_HTTP_POWER_ON_THRESHOLD;
+    target.POWER_OFF_threshold = source["power_off_threshold"] | GRIDCHARGER_HTTP_POWER_OFF_THRESHOLD;
+    target.BatterySoCLimitsEnabled = source["power_batterysoc_limits_enabled"] | GRIDCHARGER_HTTP_POWER_BATTERYSOC_LIMITS_ENABLED;
+}
+
 bool ConfigurationClass::read()
 {
     File f = LittleFS.open(CONFIG_FILENAME, "r", false);
@@ -887,6 +921,7 @@ bool ConfigurationClass::read()
     deserializeGridChargerConfig(gridcharger, config.GridCharger);
     deserializeGridChargerCanConfig(gridcharger["can"], config.GridCharger.Can);
     deserializeGridChargerHuaweiConfig(gridcharger["huawei"], config.GridCharger.Huawei);
+    deserializeGridChargerHTTPConfig(gridcharger["HTTP"], config.GridCharger.HTTP);
 
     f.close();
 

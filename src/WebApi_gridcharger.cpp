@@ -4,6 +4,7 @@
  */
 #include "WebApi_gridcharger.h"
 #include <gridcharger/huawei/Controller.h>
+#include <gridcharger/HTTP/Controller.h>
 #include "Configuration.h"
 #include "PinMapping.h"
 #include "WebApi.h"
@@ -32,8 +33,13 @@ void WebApiGridChargerClass::onStatus(AsyncWebServerRequest* request)
 
     AsyncJsonResponse* response = new AsyncJsonResponse();
     auto& root = response->getRoot();
-    HuaweiCan.getJsonData(root);
-
+    auto const& config = Configuration.get();
+    if (config.GridCharger.Provider == GridChargerProviderType::HUAWEI) {
+        HuaweiCan.getJsonData(root);
+    }
+    else if (config.GridCharger.Provider == GridChargerProviderType::HTTP) {
+        HTTPCtrl.getJsonData(root);
+      }
     response->setLength();
     request->send(response);
 }
@@ -146,6 +152,9 @@ void WebApiGridChargerClass::onAdminGet(AsyncWebServerRequest* request)
     auto huawei = root["huawei"].to<JsonObject>();
     ConfigurationClass::serializeGridChargerHuaweiConfig(config.GridCharger.Huawei, huawei);
 
+    auto HTTP = root["HTTP"].to<JsonObject>();
+    ConfigurationClass::serializeGridChargerHTTPConfig(config.GridCharger.HTTP, HTTP);
+
     response->setLength();
     request->send(response);
 }
@@ -208,13 +217,20 @@ void WebApiGridChargerClass::onAdminPost(AsyncWebServerRequest* request)
         auto guard = Configuration.getWriteGuard();
         auto& config = guard.getConfig();
         ConfigurationClass::deserializeGridChargerConfig(root.as<JsonObject>(), config.GridCharger);
-        ConfigurationClass::deserializeGridChargerCanConfig(root["can"].as<JsonObject>(), config.GridCharger.Can);
-        ConfigurationClass::deserializeGridChargerHuaweiConfig(root["huawei"].as<JsonObject>(), config.GridCharger.Huawei);
+        uint8_t provider = root["provider"].as<uint8_t>();
+        if (provider == static_cast<uint8_t>(GridChargerProviderType::HUAWEI)) {
+            ConfigurationClass::deserializeGridChargerCanConfig(root["can"].as<JsonObject>(), config.GridCharger.Can);
+            ConfigurationClass::deserializeGridChargerHuaweiConfig(root["huawei"].as<JsonObject>(), config.GridCharger.Huawei);
+            Serial.println("GridCharger: HUAWEI provider selected");
+        }
+        else if (provider == static_cast<uint8_t>(GridChargerProviderType::HTTP)) {
+            ConfigurationClass::deserializeGridChargerHTTPConfig(root["HTTP"].as<JsonObject>(), config.GridCharger.HTTP);
+        }
     }
 
     WebApi.writeConfig(retMsg);
-
     WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
-
-    HuaweiCan.updateSettings();
+    if (Configuration.get().GridCharger.Provider == GridChargerProviderType::HUAWEI) {
+        HuaweiCan.updateSettings();
+    }
 }

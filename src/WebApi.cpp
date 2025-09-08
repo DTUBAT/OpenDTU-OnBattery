@@ -47,7 +47,6 @@ void WebApiClass::init(Scheduler& scheduler)
     _webApiWsGridChargerLive.init(_server, scheduler);
     _webApiGridCharger.init(_server, scheduler);
     _webApiWsBatteryLive.init(_server, scheduler);
-
     _server.begin();
 }
 

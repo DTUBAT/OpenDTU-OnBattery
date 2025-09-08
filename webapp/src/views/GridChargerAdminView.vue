@@ -32,7 +32,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3">
+                    <div class="row mb-3" v-if="gridChargerConfigList.provider === 0">
                         <label class="col-sm-4 col-form-label">
                             {{ $t('gridchargeradmin.HardwareInterface') }}
                         </label>
@@ -45,7 +45,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3" v-if="gridChargerConfigList.can.hardware_interface === 0">
+                    <div class="row mb-3" v-if="gridChargerConfigList.can.hardware_interface === 0 && gridChargerConfigList.provider === 0">
                         <label class="col-sm-4 col-form-label">
                             {{ $t('gridchargeradmin.CanControllerFrequency') }}
                         </label>
@@ -63,6 +63,7 @@
                     </div>
 
                     <InputElement
+                        v-if="gridChargerConfigList.provider === 0"
                         :label="$t('gridchargeradmin.EnableAutoPower')"
                         v-model="gridChargerConfigList.auto_power_enabled"
                         type="checkbox"
@@ -84,6 +85,15 @@
                         type="checkbox"
                         wide
                     />
+
+                    <InputElement
+                        v-if="gridChargerConfigList.provider === 1"
+                        :label="$t('gridchargeradmin.EnableBatterySoCLimitsHTTP')"
+                        v-model="gridChargerConfigList.HTTP.power_batterysoc_limits_enabled"
+                        type="checkbox"
+                        wide
+                    />
+
                 </template>
             </CardElement>
             <CardElement
@@ -134,7 +144,117 @@
                     wide
                 />
             </CardElement>
+            <CardElement
+                :text="$t('gridchargeradmin.HTTPSettings')"
+                textVariant="text-bg-primary"
+                add-space
+                v-if="gridChargerConfigList.enabled && gridChargerConfigList.provider === 1"
+            >
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPipAddress')"
+                    v-model="gridChargerConfigList.HTTP.url"
+                    :tooltip="$t('gridchargeradmin.HTTPipAddressHint')"
+                    placeholder="http://192.168.2.100"
+                    type="text"
+                    wide
+                />
 
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPuriON')"
+                    v-model="gridChargerConfigList.HTTP.uri_on"
+                    :tooltip="$t('gridchargeradmin.HTTPuriONHint')"
+                    placeholder="/relay/0?turn=on"
+                    type="text"
+                    wide
+                />
+
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPuriOFF')"
+                    v-model="gridChargerConfigList.HTTP.uri_off"
+                    :tooltip="$t('gridchargeradmin.HTTPuriOFFHint')"
+                    placeholder="/relay/0?turn=off"
+                    type="text"
+                    wide
+                />
+
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPuriSTATS')"
+                    v-model="gridChargerConfigList.HTTP.uri_stats"
+                    :tooltip="$t('gridchargeradmin.HTTPuriSTATSHint')"
+                    placeholder="/relay/0?turn=stats"
+                    type="text"
+                    wide
+                />
+
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPuriPOWERPARAM')"
+                    v-model="gridChargerConfigList.HTTP.uri_powerparam"
+                    :tooltip="$t('gridchargeradmin.HTTPuriPOWERPARAMHint')"
+                    placeholder="apower"
+                    type="text"
+                    wide
+                />
+
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPStartThreshold')"
+                    v-model="gridChargerConfigList.HTTP.power_on_threshold"
+                    :tooltip="$t('gridchargeradmin.HTTPStartThresholdHint')"
+                    placeholder="-500"
+                    postfix="W"
+                    type="number"
+                    wide
+                    required
+                />
+
+                                <InputElement
+                    :label="$t('gridchargeradmin.HTTPStopThreshold')"
+                    v-model="gridChargerConfigList.HTTP.power_off_threshold"
+                    :tooltip="$t('gridchargeradmin.HTTPStopThresholdHint')"
+                    placeholder="-500"
+                    postfix="W"
+                    type="number"
+                    wide
+                    required
+                />
+
+                </CardElement>
+
+                <CardElement
+                :text="$t('gridchargeradmin.HTTPSettings')"
+                textVariant="text-bg-primary"
+                add-space
+                v-if="gridChargerConfigList.HTTP.power_batterysoc_limits_enabled && gridChargerConfigList.provider === 1"
+                >
+
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPstartBatterySoCThreshold')"
+                    v-model="gridChargerConfigList.HTTP.start_batterysoc_threshold"
+                    :tooltip="$t('gridchargeradmin.HTTPstartBatterySoCThresholdHint')"
+                    placeholder="30"
+                    postfix="%"
+                    type="number"
+                    wide
+                    required
+                    step="1"
+                    min="0"
+                    max="100"
+                />
+
+                <InputElement
+                    :label="$t('gridchargeradmin.HTTPstopBatterySoCThreshold')"
+                    v-model="gridChargerConfigList.HTTP.stop_batterysoc_threshold"
+                    :tooltip="$t('gridchargeradmin.HTTPstopBatterySoCThresholdHint')"
+                    placeholder="70"
+                    postfix="%"
+                    type="number"
+                    wide
+                    required
+                    step="1"
+                    min="0"
+                    max="100"
+                />
+
+            </CardElement>
             <CardElement
                 :text="$t('gridchargeradmin.Limits')"
                 textVariant="text-bg-primary"
@@ -259,7 +379,10 @@ export default defineComponent({
             alertMessage: '',
             alertType: 'info',
             showAlert: false,
-            providerTypeList: [{ key: 0, value: 'Huawei' }],
+            providerTypeList: [
+                { key: 0, value: 'Huawei' },
+                { key: 1, value: 'HTTP' },
+            ],
             frequencyTypeList: [
                 { key: 8, value: 8000000 },
                 { key: 16, value: 16000000 },

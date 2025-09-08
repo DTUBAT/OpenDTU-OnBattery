@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#pragma once
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <ArduinoJson.h>
+#include <condition_variable>
+#include "HttpGetter.h"
+#include "Configuration.h"
+#include <TaskSchedulerDeclarations.h>
+#include <gridcharger/HTTP/DataPoints.h>
+#include <atomic>
+#include <array>
+#include <variant>
+#include <mutex>
+
+
+namespace GridChargers::HTTP {
+
+class Controller {
+public:
+    void init(Scheduler& scheduler);
+    void updateSettings();
+    void setFan(bool online, bool fullSpeed);
+    void setProduction(bool enable);
+    void setMode(uint8_t mode);
+
+    DataPointContainerHTTP const& getDataPoints() const { return _dataPoints; }
+    void getJsonData(JsonVariant& root) const;
+
+    bool getAutoPowerStatus() const { return _autoPowerEnabled; };
+
+
+    // determined through trial and error (voltage limits, R4850G2)
+    // and some educated guessing (current limits, no R4875 at hand)
+    static constexpr float MIN_ONLINE_VOLTAGE = 41.0f;
+    static constexpr float MAX_ONLINE_VOLTAGE = 58.6f;
+    static constexpr float MIN_ONLINE_CURRENT = 0.0f;
+    static constexpr float MAX_ONLINE_CURRENT = 84.0f;
+    static constexpr float MIN_OFFLINE_VOLTAGE = 48.0f;
+    static constexpr float MAX_OFFLINE_VOLTAGE = 58.4f;
+    static constexpr float MIN_OFFLINE_CURRENT = 0.0f;
+    static constexpr float MAX_OFFLINE_CURRENT = 84.0f;
+    static constexpr float MIN_INPUT_CURRENT_LIMIT = 0.0f;
+    static constexpr float MAX_INPUT_CURRENT_LIMIT = 40.0f;
+
+private:
+    void loop();
+    void _setProduction(bool enable);
+
+    // these control the pin named "power", which in turn is supposed to control
+    // a relay (or similar) to enable or disable the PSU using it's slot detect
+    // pins.
+    void enableOutput();
+    void disableOutput();
+    gpio_num_t _huaweiPower;
+
+    template<DataPointLabel L>
+    void addValueInSection(JsonVariant& root,
+        std::string const& section, std::string const& name) const
+    {
+        auto oVal = _dataPoints.get<L>();
+        if (!oVal) { return; }
+
+        auto jsonValue = root["values"][section][name];
+        jsonValue["v"] = *oVal;
+        jsonValue["u"] = DataPointLabelTraits<L>::unit;
+        jsonValue["d"] = 2;
+    }
+
+    template<DataPointLabel L>
+    void addStringInSection(JsonVariant& root,
+        std::string const& section, std::string const& name) const
+    {
+        auto oVal = _dataPoints.get<L>();
+        if (!oVal) { return; }
+
+        auto jsonValue = root["values"][section][name];
+        jsonValue["value"] = *oVal;
+        jsonValue["translate"] = false;
+    }
+
+    void addStringInSection(JsonVariant& root,
+        std::string const& section, std::string const& name,
+        std::string const& value) const
+    {
+        auto jsonValue = root["values"][section][name];
+        jsonValue["value"] = value;
+        jsonValue["translate"] = true;
+    }
+
+    Task _loopTask;
+
+
+    std::mutex _mutex;
+    std::optional<bool> _oOutputEnabled;
+
+
+    DataPointContainerHTTP _dataPoints;
+
+    uint32_t _outputCurrentOnSinceMillis;         // Timestamp since when the PSU was idle at zero amps
+    uint32_t _nextAutoModePeriodicIntMillis;      // When to set the next output voltage in automatic mode
+    uint32_t _lastPowerMeterUpdateReceivedMillis; // Timestamp of last seen power meter value
+    uint32_t _autoModeBlockedTillMillis = 0;      // Timestamp to block running auto mode for some time
+
+    uint8_t _autoPowerEnabledCounter = 0;
+    bool _autoPowerEnabled = false;
+    bool _batteryEmergencyCharging = false;
+};
+
+} // namespace GridChargers::HTTP
+
+extern GridChargers::HTTP::Controller HTTPCtrl;

@@ -6,6 +6,7 @@
 #include "AsyncJson.h"
 #include "Configuration.h"
 #include <gridcharger/huawei/Controller.h>
+#include <gridcharger/HTTP/Controller.h>
 #include "Utils.h"
 #include "WebApi.h"
 #include "defaults.h"
