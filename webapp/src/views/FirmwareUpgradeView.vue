@@ -149,7 +149,7 @@ export default defineComponent({
             const formData = new FormData();
             if (event !== null) {
                 const target = event.target as HTMLInputElement;
-                if (target.files !== null) {
+                if (target.files !== null && target.files[0]) {
                     this.file = target.files[0];
                 }
             }
@@ -183,7 +183,7 @@ export default defineComponent({
             this.fileMD5(this.file)
                 .then((md5) => {
                     formData.append('MD5', md5 as string);
-                    formData.append('firmware', this.file, this.file.name);
+                    formData.append('firmware', this.file, 'firmware');
                     request.open('post', '/api/firmware/update');
                     authHeader().forEach((value, key) => {
                         request.setRequestHeader(key, value);
