@@ -9,6 +9,7 @@
 #include <battery/Controller.h>
 #include <battery/Stats.h>
 #include <gridcharger/huawei/Controller.h>
+#include <gridcharger/http/Controller.h>
 #include <powermeter/Controller.h>
 #include "defaults.h"
 #include <solarcharger/Controller.h>
@@ -115,14 +116,21 @@ void WebApiWsLiveClass::generateOnBatteryJsonResponse(JsonVariant& root, bool al
         if (!all) { _lastPublishSolarCharger = millis(); }
     }
 
-    if (all || (HuaweiCan.getDataPoints().getLastUpdate() - _lastPublishGridCharger) < halfOfAllMillis ) {
+    if (all || (HuaweiCan.getDataPoints().getLastUpdate() - _lastPublishGridCharger) < halfOfAllMillis || (HTTPCtrl.getDataPoints().getLastUpdate() - _lastPublishGridCharger) < halfOfAllMillis ) {
         auto gridChargerObj = root["gridcharger"].to<JsonObject>();
         gridChargerObj["enabled"] = config.GridCharger.Enabled;
 
         if (config.GridCharger.Enabled) {
-            auto const& dataPoints = HuaweiCan.getDataPoints();
-            auto oInputPower = dataPoints.get<GridChargers::Huawei::DataPointLabel::InputPower>();
-            float pwr = oInputPower.value_or(0.0f);
+            float pwr=0;
+            if(config.GridCharger.Provider == GridChargerProviderType::HUAWEI) {
+                auto const& dataPoints = HuaweiCan.getDataPoints();
+                auto oInputPower = dataPoints.get<GridChargers::Huawei::DataPointLabel::InputPower>();
+                pwr = oInputPower.value_or(0.0f);
+            } else if(config.GridCharger.Provider == GridChargerProviderType::HTTP) {
+                auto const& dataPoints = HTTPCtrl.getDataPoints();
+                auto oInputPower = dataPoints.get<GridChargers::HTTP::DataPointLabel::InputPower>();
+                pwr = oInputPower.value_or(0.0f);
+            }
             addTotalField(gridChargerObj, "Power", pwr, "W", 2);
         }
 

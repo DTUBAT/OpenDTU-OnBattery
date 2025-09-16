@@ -68,7 +68,7 @@ void Controller::updateSettings()
 
     auto const& config = Configuration.get();
 
-    if (!config.GridCharger.Enabled) { return; }
+    if (!config.GridCharger.Enabled || config.GridCharger.Provider != GridChargerProviderType::HUAWEI) { return; }
 
     switch (config.GridCharger.Can.HardwareInterface) {
         case GridChargerHardwareInterface::MCP2515:

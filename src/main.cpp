@@ -13,6 +13,7 @@
 #include "SerialPortManager.h"
 #include <battery/Controller.h>
 #include <gridcharger/huawei/Controller.h>
+#include <gridcharger/HTTP/Controller.h>
 #include "MqttHandleDtu.h"
 #include "MqttHandleHass.h"
 #include "MqttHandleInverter.h"
@@ -151,6 +152,7 @@ void setup()
     SolarCharger.init(scheduler);
     PowerMeter.init(scheduler);
     PowerLimiter.init(scheduler);
+    HTTPCtrl.init(scheduler);
     HuaweiCan.init(scheduler);
     Battery.init(scheduler);
 
